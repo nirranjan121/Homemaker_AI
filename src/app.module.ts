@@ -1,12 +1,14 @@
 // src/app.module.ts
 import { McpApp, Module, ConfigModule } from '@nitrostack/core';
 import { HouseplanModule } from './modules/houseplan/houseplan.module.js';
+import { ChatbotModule } from './modules/chatbot/chatbot.module.js';
 
 @Module({
   name: 'AppModule',
   imports: [
     ConfigModule.forRoot(),
-    HouseplanModule
+    HouseplanModule,
+    ChatbotModule
   ],
   providers: [
     { provide: 'OAUTH_CONFIG', useValue: { required: false } }
