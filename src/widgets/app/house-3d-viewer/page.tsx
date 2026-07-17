@@ -1,122 +1,123 @@
-// src/widgets/app/house-3d-viewer/page.tsx
-'use client';
-import { useEffect, useRef, useState } from 'react';
-import { useWidgetSDK } from '@nitrostack/widgets';
-import * as THREE from 'three';
+import React, { useEffect, useRef, useState } from 'react';
+import { buildHouseScene, type SceneHandle } from './scene';
+import type { RoomShape, FloorMaterial, CostEstimate } from '../../../modules/houseplan/houseplan.types';
 
-type RoomShape = {
-  id: string;
-  name: string;
-  polygon: { x: number; y: number }[];
-  wallHeightM: number;
-};
+// NOTE ON WIRING: this assumes @nitrostack/widgets passes the tool's
+// return value straight through as this component's props (that's the
+// pattern shown for @Widget-decorated tools/resources in the NitroStack
+// docs). Check your installed @nitrostack/widgets version's guide — if it
+// instead exposes props via a hook (e.g. useToolOutput()) rather than
+// direct props, swap the two lines below accordingly; nothing else in
+// this file needs to change.
+export interface HouseViewerProps {
+  rooms: RoomShape[];
+  wallColorHex?: string;
+  floorMaterials?: Record<string, FloorMaterial>;
+  costEstimate?: CostEstimate | null;
+}
 
-type ToolOutput = {
-  geometry?: RoomShape[];
-  materials?: { wallColor: string; floorMaterial: string };
-  estimateInrLow?: number;
-  estimateInrHigh?: number;
-  resolvedCity?: string;
-  quality?: string;
-  disclaimer?: string;
-};
+const MATERIAL_OPTIONS: { key: FloorMaterial; label: string }[] = [
+  { key: 'oak', label: 'Oak wood' },
+  { key: 'tile', label: 'Ceramic tile' },
+  { key: 'concrete', label: 'Concrete' },
+  { key: 'carpet', label: 'Carpet' },
+];
 
-export default function House3DViewer() {
-  const { isReady, getToolOutput } = useWidgetSDK();
-  const mountRef = useRef<HTMLDivElement>(null);
-  const [data, setData] = useState<ToolOutput | null>(null);
+export default function HouseViewer(props: HouseViewerProps) {
+  const rooms = props.rooms ?? [];
+  const containerRef = useRef<HTMLDivElement>(null);
+  const sceneRef = useRef<SceneHandle | null>(null);
 
+  const [wallColorHex, setWallColorHex] = useState(props.wallColorHex ?? '#e8e4dc');
+  const [floorMaterials, setFloorMaterials] = useState<Record<string, FloorMaterial>>(
+    props.floorMaterials ?? Object.fromEntries(rooms.map((r) => [r.id, 'oak' as FloorMaterial])),
+  );
+  const [selectedRoomId, setSelectedRoomId] = useState(rooms[0]?.id);
+
+  // Rebuild only when the room set changes (a fresh generate_3d_shell call).
+  // Color/material edits mutate the existing scene instead of rebuilding it.
   useEffect(() => {
-    if (!isReady) return;
-    setData(getToolOutput() as ToolOutput);
-  }, [isReady, getToolOutput]);
+    if (!containerRef.current || rooms.length === 0) return;
+    const handle = buildHouseScene(containerRef.current, rooms, {
+      wallColorHex,
+      floorMaterials,
+    });
+    sceneRef.current = handle;
+    return () => handle.dispose();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rooms]);
 
-  // --- Three.js scene: rebuild whenever geometry/materials change ---
-  useEffect(() => {
-    if (!data?.geometry || !mountRef.current) return;
-    const mount = mountRef.current;
-    mount.innerHTML = '';
+  function handleWallColorChange(hex: string) {
+    setWallColorHex(hex);
+    sceneRef.current?.setWallColor(hex);
+    // This only updates the live view. To persist the edit through the
+    // model (so it survives a re-render / another tool call), call the
+    // edit_material tool here once free-text -> target/value parsing is
+    // wired up — see README, edit_material row.
+  }
 
-    const width = mount.clientWidth || 600;
-    const height = 420;
+  function handleFloorMaterialChange(roomId: string, material: FloorMaterial) {
+    setFloorMaterials((prev) => ({ ...prev, [roomId]: material }));
+    sceneRef.current?.setFloorMaterial(roomId, material);
+  }
 
-    const scene = new THREE.Scene();
-    scene.background = new THREE.Color('#e9e6df');
-
-    const camera = new THREE.PerspectiveCamera(50, width / height, 0.1, 200);
-    camera.position.set(10, 12, 14);
-    camera.lookAt(4, 0, 4);
-
-    const renderer = new THREE.WebGLRenderer({ antialias: true });
-    renderer.setSize(width, height);
-    mount.appendChild(renderer.domElement);
-
-    const light = new THREE.DirectionalLight(0xffffff, 1);
-    light.position.set(10, 20, 10);
-    scene.add(light);
-    scene.add(new THREE.AmbientLight(0xffffff, 0.5));
-
-    const wallColor = data.materials?.wallColor ?? '#f2f0ea';
-    const floorMaterialName = data.materials?.floorMaterial ?? 'concrete';
-    const floorColor = floorMaterialName.toLowerCase().includes('wood') ? '#a9754f' : '#c9c5bb';
-
-    for (const room of data.geometry) {
-      // Floor
-      const shape = new THREE.Shape(room.polygon.map((p) => new THREE.Vector2(p.x, p.y)));
-      const floorGeo = new THREE.ShapeGeometry(shape);
-      const floorMesh = new THREE.Mesh(
-        floorGeo,
-        new THREE.MeshStandardMaterial({ color: floorColor, side: THREE.DoubleSide })
-      );
-      floorMesh.rotation.x = -Math.PI / 2;
-      scene.add(floorMesh);
-
-      // Walls: one box per polygon edge
-      for (let i = 0; i < room.polygon.length; i++) {
-        const a = room.polygon[i];
-        const b = room.polygon[(i + 1) % room.polygon.length];
-        const length = Math.hypot(b.x - a.x, b.y - a.y);
-        const wallGeo = new THREE.BoxGeometry(length, room.wallHeightM, 0.15);
-        const wallMesh = new THREE.Mesh(
-          wallGeo,
-          new THREE.MeshStandardMaterial({ color: wallColor })
-        );
-        wallMesh.position.set(
-          (a.x + b.x) / 2,
-          room.wallHeightM / 2,
-          (a.y + b.y) / 2
-        );
-        wallMesh.rotation.y = -Math.atan2(b.y - a.y, b.x - a.x);
-        scene.add(wallMesh);
-      }
-    }
-
-    renderer.render(scene, camera);
-
-    return () => {
-      renderer.dispose();
-    };
-  }, [data]);
-
-  if (!isReady) {
-    return <div className="p-4 text-sm text-gray-500">Loading…</div>;
+  if (rooms.length === 0) {
+    return <div>No house model yet — call generate_3d_shell first.</div>;
   }
 
   return (
-    <div className="p-4 rounded-xl bg-white">
-      <div ref={mountRef} className="w-full rounded-lg overflow-hidden border border-gray-200" />
-      {(data?.estimateInrLow || data?.estimateInrHigh) && (
-        <div className="mt-3 p-3 rounded-lg bg-gray-50 text-sm">
-          <div className="font-semibold">
-            Estimated cost: ₹{data.estimateInrLow?.toLocaleString('en-IN')} – ₹
-            {data.estimateInrHigh?.toLocaleString('en-IN')}
-          </div>
-          <div className="text-gray-500">
-            {data.resolvedCity} · {data.quality} quality
-          </div>
-          {data.disclaimer && (
-            <div className="text-gray-400 text-xs mt-1">{data.disclaimer}</div>
-          )}
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+      <div
+        ref={containerRef}
+        style={{ width: '100%', height: 480, borderRadius: 8, overflow: 'hidden' }}
+      />
+
+      <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', alignItems: 'center' }}>
+        <label style={{ display: 'flex', gap: 8, alignItems: 'center', fontSize: 13 }}>
+          Wall color
+          <input
+            type="color"
+            value={wallColorHex}
+            onChange={(e) => handleWallColorChange(e.target.value)}
+          />
+        </label>
+
+        <label style={{ display: 'flex', gap: 8, alignItems: 'center', fontSize: 13 }}>
+          Room
+          <select value={selectedRoomId} onChange={(e) => setSelectedRoomId(e.target.value)}>
+            {rooms.map((r) => (
+              <option key={r.id} value={r.id}>
+                {r.name}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        <div style={{ display: 'flex', gap: 6 }}>
+          {MATERIAL_OPTIONS.map((opt) => (
+            <button
+              key={opt.key}
+              onClick={() => selectedRoomId && handleFloorMaterialChange(selectedRoomId, opt.key)}
+              style={{
+                fontSize: 12,
+                padding: '4px 8px',
+                border:
+                  floorMaterials[selectedRoomId ?? ''] === opt.key
+                    ? '2px solid #333'
+                    : '1px solid #ccc',
+              }}
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {props.costEstimate && (
+        <div style={{ fontSize: 13, color: '#555' }}>
+          Estimated cost: ₹{props.costEstimate.minInr.toLocaleString('en-IN')} – ₹
+          {props.costEstimate.maxInr.toLocaleString('en-IN')} for{' '}
+          {props.costEstimate.areaSqft.toLocaleString('en-IN')} sqft ({props.costEstimate.rateTier})
         </div>
       )}
     </div>

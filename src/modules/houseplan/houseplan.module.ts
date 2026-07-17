@@ -4,7 +4,9 @@ import { HouseplanTools } from './houseplan.tools.js';
 import { HouseplanState } from './houseplan.state.js';
 
 @Module({
-  providers: [HouseplanTools, HouseplanState],
+  name: 'HouseplanModule',
+  controllers: [HouseplanTools],
+  providers: [HouseplanState],
   exports: [HouseplanState]
 })
 export class HouseplanModule {}
