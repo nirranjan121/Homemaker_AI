@@ -8,10 +8,22 @@ export interface RoomShape {
   wallHeightM: number;
 }
 
+/** Per-room surface material state. */
+export interface RoomMaterials {
+  wallColor: string;       // hex color
+  wallColorId?: string;    // catalog ID (e.g. "sage_green")
+  wallTexture: string;     // catalog ID (e.g. "red_brick", "smooth_plaster")
+  floorMaterial: string;   // catalog ID (e.g. "oak_hardwood")
+  floorColor?: string;     // resolved hex color for the floor
+}
+
 export interface HouseModel {
   planId: string;
   rooms: RoomShape[];
   totalFloorAreaSqM: number;
+  /** Per-room material assignments. Key = roomId. */
+  roomMaterials: Record<string, RoomMaterials>;
+  /** Legacy global materials — kept for backward compat with existing tools. */
   materials: {
     wallColor: string;
     floorMaterial: string;
@@ -22,6 +34,8 @@ export interface HouseModel {
     lng?: number;
     resolvedCity?: string;
   };
+  /** Snapshots of roomMaterials for undo support. */
+  history?: Record<string, RoomMaterials>[];
 }
 
 /**
@@ -46,5 +60,17 @@ export class HouseplanState {
 
   has(): boolean {
     return this.current !== null;
+  }
+
+  /**
+   * Undo the last design_modify change.
+   * Returns true if there was something to undo.
+   */
+  undo(): boolean {
+    if (!this.current || !this.current.history || this.current.history.length === 0) {
+      return false;
+    }
+    this.current.roomMaterials = this.current.history.pop()!;
+    return true;
   }
 }

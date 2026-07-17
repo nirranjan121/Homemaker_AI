@@ -3,9 +3,15 @@ import { ToolDecorator as Tool, Widget, z, ExecutionContext } from '@nitrostack/
 import { HouseplanState, HouseModel } from './houseplan.state.js';
 import { extractRoomsFromPlanImage, shoelaceAreaSqM } from './houseplan.vision.js';
 import { resolveCityTier, getRateRangeInrPerSqft, QualityTier } from './houseplan.rates.js';
+import { DesignAgent } from './agent/design-agent.js';
+import { lookupMaterial } from './materials/material-catalog.js';
 
 export class HouseplanTools {
-  constructor(private readonly state: HouseplanState) {}
+  private readonly designAgent: DesignAgent;
+
+  constructor(private readonly state: HouseplanState) {
+    this.designAgent = new DesignAgent(state);
+  }
 
   // ---------------------------------------------------------------------
   // 1. generate_3d_shell
@@ -31,14 +37,27 @@ export class HouseplanTools {
       0
     );
 
+    // Initialize per-room materials with defaults
+    const roomMaterials: Record<string, { wallColor: string; wallTexture: string; floorMaterial: string; floorColor?: string }> = {};
+    for (const room of rooms) {
+      roomMaterials[room.id] = {
+        wallColor: '#f2f0ea',
+        wallTexture: 'smooth_plaster',
+        floorMaterial: 'raw_concrete_floor',
+        floorColor: '#9B9B93',
+      };
+    }
+
     const model: HouseModel = {
       planId: `plan_${Date.now()}`,
       rooms: rooms.map((r) => ({ ...r, wallHeightM: input.floorHeightM })),
       totalFloorAreaSqM,
+      roomMaterials,
       materials: {
         wallColor: '#f2f0ea',
         floorMaterial: 'concrete'
-      }
+      },
+      history: [],
     };
 
     this.state.set(model);
@@ -50,12 +69,13 @@ export class HouseplanTools {
       rooms: model.rooms.map((r) => ({ id: r.id, name: r.name })),
       // Widget reads this shape via getToolOutput() to draw the 3D scene.
       geometry: model.rooms,
-      materials: model.materials
+      materials: model.materials,
+      roomMaterials: model.roomMaterials,
     };
   }
 
   // ---------------------------------------------------------------------
-  // 2. edit_material
+  // 2. edit_material (legacy — kept for backward compat)
   // ---------------------------------------------------------------------
   @Tool({
     name: 'edit_material',
@@ -90,12 +110,76 @@ export class HouseplanTools {
       planId: model.planId,
       appliedCommand: input.command,
       materials: model.materials,
+      roomMaterials: model.roomMaterials,
       geometry: model.rooms
     };
   }
 
   // ---------------------------------------------------------------------
-  // 3. estimate_cost
+  // 3. design_modify (NEW — AI-powered agent)
+  // ---------------------------------------------------------------------
+  @Tool({
+    name: 'design_modify',
+    description:
+      'AI-powered interior design agent. Takes a natural language prompt from the ' +
+      'client and intelligently modifies the house — wall colors, wall textures, ' +
+      'floor tiles/materials. Examples: "make the living room walls sage green", ' +
+      '"put marble tiles in the kitchen", "change all walls to exposed brick", ' +
+      '"oak hardwood floors in the bedroom and teal walls". ' +
+      'Supports multiple changes in a single prompt.',
+    inputSchema: z.object({
+      prompt: z.string().describe(
+        'Natural language description of the desired design changes. ' +
+        'Can include multiple changes, room targeting, and material/color names.'
+      )
+    })
+  })
+  @Widget('house-3d-viewer')
+  async designModify(
+    input: { prompt: string },
+    _ctx: ExecutionContext
+  ) {
+    const agentResult = await this.designAgent.processPrompt(input.prompt);
+    const model = this.state.get();
+
+    return {
+      planId: model.planId,
+      success: agentResult.success,
+      summary: agentResult.summary,
+      commandsApplied: agentResult.commands,
+      error: agentResult.error,
+      // Widget data for re-render
+      geometry: model.rooms,
+      materials: model.materials,
+      roomMaterials: model.roomMaterials,
+    };
+  }
+
+  // ---------------------------------------------------------------------
+  // 4. design_undo
+  // ---------------------------------------------------------------------
+  @Tool({
+    name: 'design_undo',
+    description: 'Undo the last design_modify change, reverting to the previous material state.',
+    inputSchema: z.object({})
+  })
+  @Widget('house-3d-viewer')
+  async designUndo(_input: {}, _ctx: ExecutionContext) {
+    const undone = this.state.undo();
+    const model = this.state.get();
+
+    return {
+      planId: model.planId,
+      undone,
+      summary: undone ? 'Reverted to previous design state.' : 'Nothing to undo.',
+      geometry: model.rooms,
+      materials: model.materials,
+      roomMaterials: model.roomMaterials,
+    };
+  }
+
+  // ---------------------------------------------------------------------
+  // 5. estimate_cost
   // ---------------------------------------------------------------------
   @Tool({
     name: 'estimate_cost',

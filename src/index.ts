@@ -9,7 +9,7 @@ if (process.env.NODE_ENV !== 'production') {
 
 async function bootstrap() {
   try {
-    console.log("Starting HomeCraft...");
+    console.error("Starting HomeCraft...");
     const app = await McpApplicationFactory.create(AppModule);
     await app.start();
   } catch (error) {
