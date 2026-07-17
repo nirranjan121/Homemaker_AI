@@ -1,11 +1,12 @@
 // src/modules/houseplan/houseplan.tools.ts
-import { ToolDecorator as Tool, Widget, z, ExecutionContext } from '@nitrostack/core';
+import { ToolDecorator as Tool, Widget, z, ExecutionContext, ControllerDecorator } from '@nitrostack/core';
 import { HouseplanState, HouseModel } from './houseplan.state.js';
 import { extractRoomsFromPlanImage, shoelaceAreaSqM } from './houseplan.vision.js';
 import { resolveCityTier, getRateRangeInrPerSqft, QualityTier } from './houseplan.rates.js';
 import { DesignAgent } from './agent/design-agent.js';
 import { lookupMaterial } from './materials/material-catalog.js';
 
+@ControllerDecorator()
 export class HouseplanTools {
   private readonly designAgent: DesignAgent;
 
