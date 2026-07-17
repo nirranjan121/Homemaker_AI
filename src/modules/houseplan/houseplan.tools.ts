@@ -110,6 +110,7 @@ export class HouseplanTools {
   ) {
     const agentResult = await this.designAgent.processPrompt(input.prompt);
     const model = this.state.get();
+    await syncStateToSpecFile(model);
 
     return {
       planId: model.planId,
@@ -136,6 +137,7 @@ export class HouseplanTools {
   async designUndo(_input: {}, _ctx: ExecutionContext) {
     const undone = this.state.undo();
     const model = this.state.get();
+    await syncStateToSpecFile(model);
 
     return {
       planId: model.planId,
@@ -193,5 +195,36 @@ export class HouseplanTools {
       disclaimer:
         'Rough feasibility-stage estimate (area x regional rate band), not a detailed BOQ. ±20-30% typical variance.'
     };
+  }
+}
+
+async function syncStateToSpecFile(model: HouseModel) {
+  try {
+    const fs = await import('fs');
+    const path = await import('path');
+    const specPath = path.resolve(process.cwd(), 'uploads/3d_model_spec.json');
+    if (fs.existsSync(specPath)) {
+      const spec = JSON.parse(fs.readFileSync(specPath, 'utf8'));
+      if (spec.rooms && model.roomMaterials) {
+        for (const room of spec.rooms) {
+          const roomId = room.name.toLowerCase().replace(/\s+/g, '_');
+          const mat = model.roomMaterials[roomId];
+          if (mat) {
+            room.wall_paint_color_hex = mat.wallColor;
+            if (!room.floor_material) {
+              room.floor_material = {};
+            }
+            room.floor_material.type = mat.floorMaterial;
+            if (mat.floorColor) {
+              room.floor_material.color_hex = mat.floorColor;
+            }
+          }
+        }
+      }
+      fs.writeFileSync(specPath, JSON.stringify(spec, null, 2), 'utf8');
+      console.log(`Synced updated design state back to spec file at ${specPath}`);
+    }
+  } catch (err) {
+    console.error('Failed to sync state to spec file:', err);
   }
 }

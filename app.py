@@ -121,7 +121,7 @@ def estimate_cost():
 
     try:
         import subprocess
-        cmd = ["npx", "-y", "tsx", "run_estimation.ts", location, quality, str(floors)]
+        cmd = ["npx", "--no-install", "tsx", "run_estimation.ts", location, quality, str(floors)]
         if plot_area_sqyd:
             cmd.append(str(plot_area_sqyd))
             
@@ -166,7 +166,7 @@ def chat():
 
     try:
         import subprocess
-        cmd = ["npx", "-y", "tsx", "run_chatbot.ts", question, history_json]
+        cmd = ["npx", "--no-install", "tsx", "run_chatbot.ts", question, history_json]
         
         env = os.environ.copy()
         env["GEMINI_API_KEY"] = os.environ.get("GEMINI_API_KEY", "")
