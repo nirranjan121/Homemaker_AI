@@ -1,57 +1,64 @@
 // src/modules/houseplan/houseplan.vision.ts
 import { RoomShape } from './houseplan.state.js';
+import { spawn } from 'child_process';
+import path from 'path';
 
-/**
- * STUB. Replace with a real floor-plan segmentation pipeline:
- *   - room/wall segmentation model (e.g. a U-Net or similar trained on
- *     a floor-plan dataset such as CubiCasa5K), OR
- *   - a simpler OpenCV heuristic pipeline (line detection + closed-contour
- *     extraction) for the hackathon MVP.
- *
- * For the demo, this returns a fixed, reasonable-looking 3-room layout so the
- * rest of the pipeline (3D shell generation, widget rendering, cost estimate)
- * can be built and demoed independently of the segmentation model actually
- * being finished. Wire in the real extractor here when ready — the return
- * shape (RoomShape[]) is the contract the rest of the app depends on.
- */
-export async function extractRoomsFromPlanImage(
-  _imageBase64: string
-): Promise<RoomShape[]> {
-  return [
-    {
-      id: 'living_room',
-      name: 'Living Room',
-      polygon: [
-        { x: 0, y: 0 },
-        { x: 5, y: 0 },
-        { x: 5, y: 4 },
-        { x: 0, y: 4 }
-      ],
-      wallHeightM: 3
-    },
-    {
-      id: 'kitchen',
-      name: 'Kitchen',
-      polygon: [
-        { x: 5, y: 0 },
-        { x: 8, y: 0 },
-        { x: 8, y: 4 },
-        { x: 5, y: 4 }
-      ],
-      wallHeightM: 3
-    },
-    {
-      id: 'bedroom_1',
-      name: 'Bedroom 1',
-      polygon: [
-        { x: 0, y: 4 },
-        { x: 4, y: 4 },
-        { x: 4, y: 8 },
-        { x: 0, y: 8 }
-      ],
-      wallHeightM: 3
-    }
-  ];
+export interface PipelineResult {
+  totalFloorAreaSqM: number;
+  rooms: RoomShape[];
+  roomMaterials: Record<string, { wallColor: string; wallTexture: string; floorMaterial: string; floorColor?: string }>;
+}
+
+export async function runMcpPipeline(
+  imageBase64: string
+): Promise<PipelineResult> {
+  return new Promise((resolve, reject) => {
+    // Resolve absolute path to the Python pipeline script at root of project
+    const scriptPath = path.resolve(
+      process.cwd(),
+      'run_mcp_pipeline.py'
+    );
+
+    const py = spawn('python3', [scriptPath], {
+      env: {
+        ...process.env,
+        GEMINI_API_KEY: process.env.GEMINI_API_KEY || ''
+      }
+    });
+
+    let stdoutData = '';
+    let stderrData = '';
+
+    py.stdout.on('data', (data) => {
+      stdoutData += data.toString();
+    });
+
+    py.stderr.on('data', (data) => {
+      stderrData += data.toString();
+    });
+
+    py.on('close', (code) => {
+      if (code !== 0) {
+        return reject(
+          new Error(`Python script exited with code ${code}. Stderr: ${stderrData}`)
+        );
+      }
+      try {
+        const result: PipelineResult = JSON.parse(stdoutData);
+        resolve(result);
+      } catch (err) {
+        reject(
+          new Error(
+            `Failed to parse Python script output: ${err}. Output: ${stdoutData}`
+          )
+        );
+      }
+    });
+
+    // Write base64 string to stdin and close the stream
+    py.stdin.write(imageBase64);
+    py.stdin.end();
+  });
 }
 
 export function shoelaceAreaSqM(polygon: { x: number; y: number }[]): number {
@@ -63,3 +70,4 @@ export function shoelaceAreaSqM(polygon: { x: number; y: number }[]): number {
   }
   return Math.abs(area) / 2;
 }
+

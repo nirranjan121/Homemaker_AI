@@ -4,3 +4,7 @@ dist/
 .DS_Store
 .next/
 out/
+__pycache__/
+uploads/
+debug_overlay.png
+*.pyc

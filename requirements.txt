@@ -1,12 +1,4 @@
-opencv-python
+flask
+opencv-contrib-python-headless
 numpy
-scipy
-scikit-image
-shapely
-networkx
-matplotlib
-pillow
-torch
-torchvision
-ultralytics
-segment-anything
+google-genai

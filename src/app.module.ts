@@ -12,7 +12,7 @@ import { HouseplanModule } from './modules/houseplan/houseplan.module.js';
     { provide: 'OAUTH_CONFIG', useValue: { required: false } }
   ]
 })
-export class AppModule {}
+export class AppModule { }
 
 McpApp({
   module: AppModule,

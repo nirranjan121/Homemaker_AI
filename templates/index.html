@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Floor Plan Wall Detector</title>
+<style>
+  :root{
+    --bg:#0f1115; --panel:#171a21; --border:#2a2f3a; --text:#e7e9ee;
+    --muted:#9aa3b2; --accent:#5eb1ff; --wall:#ff4d4f; --seg:#22c55e; --room:#f5c542;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:-apple-system,Segoe UI,Roboto,Arial,sans-serif;background:var(--bg);color:var(--text)}
+  header{padding:16px 24px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+  header h1{font-size:18px;margin:0;font-weight:600}
+  .controls{display:flex;gap:10px;align-items:center;margin-left:auto;flex-wrap:wrap}
+  input[type=file]{color:var(--muted)}
+  button{background:var(--accent);color:#0b1220;border:none;padding:8px 16px;border-radius:6px;font-weight:600;cursor:pointer}
+  button:disabled{opacity:.5;cursor:not-allowed}
+  label.chk{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--muted)}
+  main{display:flex;gap:16px;padding:20px;max-width:1500px;margin:0 auto}
+  .canvas-wrap{position:relative;flex:1;min-width:0;background:var(--panel);border:1px solid var(--border);border-radius:10px;overflow:auto}
+  .canvas-inner{position:relative;display:inline-block}
+  .canvas-inner img{display:block;max-width:none}
+  .canvas-inner svg{position:absolute;top:0;left:0;pointer-events:none}
+  aside{width:340px;flex-shrink:0;background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:16px;max-height:85vh;overflow:auto}
+  aside h2{font-size:14px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin:18px 0 8px}
+  aside h2:first-child{margin-top:0}
+  .stat{display:flex;justify-content:space-between;font-size:13px;padding:4px 0;border-bottom:1px dashed var(--border)}
+  .room-row{font-size:13px;padding:6px 8px;border-radius:6px;margin-bottom:4px;background:#1f232d}
+  .room-row .name{font-weight:600}
+  .room-row .area{color:var(--muted);float:right}
+  .legend{display:flex;gap:14px;font-size:12px;color:var(--muted);flex-wrap:wrap}
+  .legend span{display:inline-flex;align-items:center;gap:5px}
+  .dot{width:10px;height:10px;border-radius:2px;display:inline-block}
+  .empty{color:var(--muted);font-size:13px;line-height:1.5}
+  .err{color:#ff8080;font-size:12px}
+  #status{font-size:12px;color:var(--muted)}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🧱 Wall Detector</h1>
+  <div class="legend">
+    <span><i class="dot" style="background:var(--wall)"></i>wall blob</span>
+    <span><i class="dot" style="background:var(--seg)"></i>wall segment (centerline)</span>
+    <span><i class="dot" style="background:var(--room)"></i>Gemini room/label</span>
+  </div>
+  <div class="controls">
+    <input type="file" id="fileInput" accept="image/*">
+    <label class="chk"><input type="checkbox" id="useGemini" checked> Use Gemini</label>
+    <label class="chk"><input type="checkbox" id="toggleBlobs" checked> Blobs</label>
+    <label class="chk"><input type="checkbox" id="toggleSegs" checked> Segments</label>
+    <label class="chk"><input type="checkbox" id="toggleRooms" checked> Gemini markers</label>
+    <button id="analyzeBtn">Analyze</button>
+    <span id="status"></span>
+  </div>
+</header>
+
+<main>
+  <div class="canvas-wrap">
+    <div class="canvas-inner" id="canvasInner">
+      <img id="planImg" alt="floor plan" />
+      <svg id="overlaySvg"></svg>
+    </div>
+  </div>
+
+  <aside>
+    <h2>Detection Stats</h2>
+    <div id="stats" class="empty">Upload a floor plan and click Analyze.</div>
+
+    <h2>Rooms (Gemini)</h2>
+    <div id="rooms" class="empty">—</div>
+
+    <h2>Dimensions (Gemini)</h2>
+    <div id="dims" class="empty">—</div>
+
+    <h2>Summary</h2>
+    <div id="summary" class="empty">—</div>
+
+    <h2>Cost Estimator (Groq/Gemini)</h2>
+    <div id="cost-section" style="padding:12px;background:#1b1f28;border:1px solid var(--border);border-radius:6px;margin-top:10px;">
+      <div style="margin-bottom:8px;">
+        <label style="display:block;font-size:11px;color:var(--muted);margin-bottom:4px;">Location</label>
+        <input type="text" id="costLocation" value="Whitefield, Bengaluru" style="width:100%;background:#11141b;border:1px solid var(--border);border-radius:4px;color:var(--text);padding:6px;font-size:12px;">
+      </div>
+      <div style="display:flex;gap:8px;margin-bottom:10px;">
+        <div style="flex:1;">
+          <label style="display:block;font-size:11px;color:var(--muted);margin-bottom:4px;">Quality</label>
+          <select id="costQuality" style="width:100%;background:#11141b;border:1px solid var(--border);border-radius:4px;color:var(--text);padding:6px;font-size:12px;">
+            <option value="basic">Basic</option>
+            <option value="standard" selected>Standard</option>
+            <option value="premium">Premium</option>
+          </select>
+        </div>
+        <div style="flex:1;">
+          <label style="display:block;font-size:11px;color:var(--muted);margin-bottom:4px;">Floors</label>
+          <input type="number" id="costFloors" value="1" min="1" max="5" style="width:100%;background:#11141b;border:1px solid var(--border);border-radius:4px;color:var(--text);padding:6px;font-size:12px;">
+        </div>
+      </div>
+      <button id="estimateBtn" style="width:100%;padding:8px;font-size:12px;margin:0;" disabled>Estimate Cost</button>
+      <div id="costResult" style="margin-top:10px;font-size:12px;"></div>
+    </div>
+
+    <h2>Chat Assistant (Dream View AI)</h2>
+    <div id="chat-section" style="padding:12px;background:#1b1f28;border:1px solid var(--border);border-radius:6px;margin-top:10px;">
+      <div id="chatLog" style="height:150px;overflow-y:auto;border:1px solid var(--border);border-radius:4px;padding:8px;background:#11141b;font-size:12px;margin-bottom:8px;display:flex;flex-direction:column;gap:6px;">
+        <div style="color:var(--muted);font-style:italic;">Ask me anything about your 3D floor plan layout, rooms, or cost!</div>
+      </div>
+      <div style="display:flex;gap:6px;">
+        <input type="text" id="chatInput" placeholder="Ask a question..." style="flex:1;background:#11141b;border:1px solid var(--border);border-radius:4px;color:var(--text);padding:6px;font-size:12px;" disabled>
+        <button id="sendChatBtn" style="padding:6px 12px;font-size:12px;margin:0;" disabled>Send</button>
+      </div>
+    </div>
+  </aside>
+</main>
+
+<script>
+const fileInput = document.getElementById('fileInput');
+const analyzeBtn = document.getElementById('analyzeBtn');
+const planImg = document.getElementById('planImg');
+const svg = document.getElementById('overlaySvg');
+const statusEl = document.getElementById('status');
+
+const toggleBlobs = document.getElementById('toggleBlobs');
+const toggleSegs = document.getElementById('toggleSegs');
+const toggleRooms = document.getElementById('toggleRooms');
+const useGemini = document.getElementById('useGemini');
+
+let lastResult = null;
+
+fileInput.addEventListener('change', () => {
+  const f = fileInput.files[0];
+  if (f) {
+    planImg.src = URL.createObjectURL(f);
+  }
+});
+
+[toggleBlobs, toggleSegs, toggleRooms].forEach(el => el.addEventListener('change', renderOverlay));
+
+analyzeBtn.addEventListener('click', async () => {
+  if (!fileInput.files[0]) { alert('Choose an image first'); return; }
+  statusEl.textContent = 'Analyzing…';
+  analyzeBtn.disabled = true;
+  const fd = new FormData();
+  fd.append('image', fileInput.files[0]);
+  fd.append('use_gemini', useGemini.checked);
+  try {
+    const res = await fetch('/api/analyze', { method: 'POST', body: fd });
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+    lastResult = data;
+    planImg.src = data.image_b64;
+    planImg.onload = renderOverlay;
+    populateSidebar(data);
+    statusEl.textContent = `Done · ${data.segments.length} segments · ${data.contours.length} wall blobs`;
+    document.getElementById('estimateBtn').disabled = false;
+    document.getElementById('sendChatBtn').disabled = false;
+    document.getElementById('chatInput').disabled = false;
+  } catch (e) {
+    statusEl.textContent = 'Error: ' + e.message;
+  } finally {
+    analyzeBtn.disabled = false;
+  }
+});
+
+function renderOverlay() {
+  if (!lastResult) return;
+  const w = lastResult.image_size.width, h = lastResult.image_size.height;
+  svg.setAttribute('viewBox', `0 0 ${w} ${h}`);
+  svg.setAttribute('width', w);
+  svg.setAttribute('height', h);
+  planImg.style.width = w + 'px';
+  planImg.style.height = h + 'px';
+  svg.innerHTML = '';
+
+  if (toggleBlobs.checked) {
+    for (const contour of lastResult.contours) {
+      const points = contour.map(p => p.join(',')).join(' ');
+      const poly = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+      poly.setAttribute('points', points);
+      poly.setAttribute('fill', 'rgba(255,77,79,0.28)');
+      poly.setAttribute('stroke', '#ff4d4f');
+      poly.setAttribute('stroke-width', '2');
+      svg.appendChild(poly);
+    }
+  }
+
+  if (toggleSegs.checked) {
+    for (const s of lastResult.segments) {
+      const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+      line.setAttribute('x1', s.x1); line.setAttribute('y1', s.y1);
+      line.setAttribute('x2', s.x2); line.setAttribute('y2', s.y2);
+      line.setAttribute('stroke', '#22c55e');
+      line.setAttribute('stroke-width', 2);
+      line.setAttribute('stroke-linecap', 'round');
+      const title = document.createElementNS('http://www.w3.org/2000/svg', 'title');
+      title.textContent = `${s.orientation} · length ${s.length_px}px · thickness ${s.thickness_px}px`;
+      line.appendChild(title);
+      svg.appendChild(line);
+    }
+  }
+
+  if (toggleRooms.checked && lastResult.gemini) {
+    const g = lastResult.gemini;
+    const markers = [];
+    (g.rooms || []).forEach(r => r.approx_bbox_pct && markers.push({
+      x: r.approx_bbox_pct.x + r.approx_bbox_pct.w / 2,
+      y: r.approx_bbox_pct.y + r.approx_bbox_pct.h / 2,
+      label: r.name
+    }));
+    (g.doors || []).forEach(d => d.approx_location_pct && markers.push({...d.approx_location_pct, label: 'door'}));
+    (g.windows || []).forEach(d => d.approx_location_pct && markers.push({...d.approx_location_pct, label: 'window'}));
+    for (const m of markers) {
+      const cx = (m.x / 100) * w, cy = (m.y / 100) * h;
+      const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+      circle.setAttribute('cx', cx); circle.setAttribute('cy', cy); circle.setAttribute('r', 7);
+      circle.setAttribute('fill', '#f5c542'); circle.setAttribute('stroke', '#0b1220'); circle.setAttribute('stroke-width', 1.5);
+      const title = document.createElementNS('http://www.w3.org/2000/svg', 'title');
+      title.textContent = m.label;
+      circle.appendChild(title);
+      svg.appendChild(circle);
+    }
+  }
+}
+
+function populateSidebar(data) {
+  const statsEl = document.getElementById('stats');
+  statsEl.innerHTML = `
+    <div class="stat"><span>Image size</span><span>${data.image_size.width} × ${data.image_size.height}px</span></div>
+    <div class="stat"><span>Wall segments</span><span>${data.segments.length}</span></div>
+    <div class="stat"><span>Wall blobs</span><span>${data.contours.length}</span></div>
+  `;
+
+  const roomsEl = document.getElementById('rooms');
+  const dimsEl = document.getElementById('dims');
+  const summaryEl = document.getElementById('summary');
+
+  if (data.gemini_error) {
+    roomsEl.innerHTML = `<div class="err">Gemini unavailable: ${data.gemini_error}</div>`;
+    dimsEl.innerHTML = ''; summaryEl.innerHTML = '';
+    return;
+  }
+  const g = data.gemini;
+  if (!g) { roomsEl.innerHTML = '<div class="empty">Gemini was disabled.</div>'; return; }
+
+  roomsEl.innerHTML = (g.rooms || []).map(r =>
+    `<div class="room-row"><span class="name">${r.name}</span><span class="area">${r.area_sq_ft ?? ''}${r.area_sq_ft ? ' sq ft' : ''}</span></div>`
+  ).join('') || '<div class="empty">No rooms found.</div>';
+
+  dimsEl.innerHTML = (g.dimensions || []).map(d =>
+    `<div class="room-row"><span class="name">${d.label}</span><span class="area">${d.value_text}</span></div>`
+  ).join('') || '<div class="empty">No dimensions found.</div>';
+
+  summaryEl.innerHTML = `<div class="empty">${g.summary || ''}${g.total_area_sq_ft ? `<br><br><b>Total area:</b> ${g.total_area_sq_ft} sq ft` : ''}</div>`;
+}
+
+const estimateBtn = document.getElementById('estimateBtn');
+const costResult = document.getElementById('costResult');
+
+estimateBtn.addEventListener('click', async () => {
+  estimateBtn.disabled = true;
+  costResult.innerHTML = '<span style="color:var(--muted);">Calculating…</span>';
+  
+  const fd = new FormData();
+  fd.append('location', document.getElementById('costLocation').value);
+  fd.append('quality', document.getElementById('costQuality').value);
+  fd.append('floors', document.getElementById('costFloors').value);
+  
+  try {
+    const res = await fetch('/api/estimate-cost', { method: 'POST', body: fd });
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+    
+    const fmt = val => {
+      if (val >= 10000000) return `₹${(val / 10000000).toFixed(2)} Cr`;
+      if (val >= 100000) return `₹${(val / 100000).toFixed(2)} L`;
+      return `₹${val.toLocaleString('en-IN')}`;
+    };
+
+    let matRows = (data.materialBreakdown || []).map(m => `
+      <div style="display:flex;justify-content:space-between;font-size:11px;border-bottom:1px dashed #2a2f3a;padding:4px 0;">
+        <span style="flex:1;text-align:left;">${m.item}</span>
+        <span style="color:var(--muted);margin-right:8px;text-align:right;">${m.quantity} ${m.unit}</span>
+        <span style="font-weight:600;text-align:right;width:70px;">${fmt(m.totalInr)}</span>
+      </div>
+    `).join('');
+
+    costResult.innerHTML = `
+      <div style="font-weight:600;color:var(--accent);margin-bottom:6px;border-bottom:1px solid var(--border);padding-bottom:4px;">
+        ${data.location.locality ? data.location.locality + ', ' : ''}${data.location.city} (${data.location.tier.toUpperCase()})
+      </div>
+      <div class="stat"><span>Area Estim.</span><span>${data.inputs.houseAreaSqFt} sq ft</span></div>
+      <div class="stat" style="font-weight:600;color:#22c55e;"><span>Proj. Cost</span><span>${fmt(data.totalProjectCost.low)} - ${fmt(data.totalProjectCost.high)}</span></div>
+      <div class="stat"><span>Material Cost</span><span>${fmt(data.totalMaterialCost)}</span></div>
+      
+      <div style="margin-top:10px;font-weight:600;font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.05em;">Materials Estimate</div>
+      <div style="max-height:140px;overflow-y:auto;margin-top:4px;border:1px solid var(--border);border-radius:4px;padding:4px 8px;background:#11141b;">
+        ${matRows}
+      </div>
+      <div style="font-size:9px;color:var(--muted);margin-top:8px;line-height:1.3;text-align:justify;">
+        ${data.disclaimer}
+      </div>
+    `;
+  } catch (e) {
+    costResult.innerHTML = `<span class="err">${e.message}</span>`;
+  } finally {
+    estimateBtn.disabled = false;
+  }
+});
+
+const sendChatBtn = document.getElementById('sendChatBtn');
+const chatInput = document.getElementById('chatInput');
+const chatLog = document.getElementById('chatLog');
+let chatHistory = [];
+
+async function sendChatMessage() {
+  const text = chatInput.value.trim();
+  if (!text) return;
+  chatInput.value = '';
+  
+  // Disable UI
+  chatInput.disabled = true;
+  sendChatBtn.disabled = true;
+  
+  // Append user message
+  const userDiv = document.createElement('div');
+  userDiv.innerHTML = `<span style="color:var(--accent);font-weight:600;">You:</span> ${text}`;
+  chatLog.appendChild(userDiv);
+  chatLog.scrollTop = chatLog.scrollHeight;
+  
+  // Append thinking indicator
+  const thinkDiv = document.createElement('div');
+  thinkDiv.style.color = 'var(--muted)';
+  thinkDiv.style.fontStyle = 'italic';
+  thinkDiv.textContent = 'Thinking…';
+  chatLog.appendChild(thinkDiv);
+  chatLog.scrollTop = chatLog.scrollHeight;
+  
+  const fd = new FormData();
+  fd.append('question', text);
+  fd.append('history', JSON.stringify(chatHistory));
+  
+  try {
+    const res = await fetch('/api/chat', { method: 'POST', body: fd });
+    const data = await res.json();
+    chatLog.removeChild(thinkDiv);
+    
+    if (data.error) throw new Error(data.error);
+    
+    const botDiv = document.createElement('div');
+    botDiv.innerHTML = `<span style="color:#22c55e;font-weight:600;">Assistant:</span> ${data.answer}`;
+    chatLog.appendChild(botDiv);
+    
+    // Save history
+    chatHistory.push({ role: 'user', content: text });
+    chatHistory.push({ role: 'model', content: data.answer });
+  } catch (e) {
+    if (chatLog.contains(thinkDiv)) chatLog.removeChild(thinkDiv);
+    const errDiv = document.createElement('div');
+    errDiv.innerHTML = `<span style="color:#ff8080;font-weight:600;">Error:</span> ${e.message}`;
+    chatLog.appendChild(errDiv);
+  } finally {
+    chatInput.disabled = false;
+    sendChatBtn.disabled = false;
+    chatLog.scrollTop = chatLog.scrollHeight;
+    chatInput.focus();
+  }
+}
+
+sendChatBtn.addEventListener('click', sendChatMessage);
+chatInput.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') sendChatMessage();
+});
+</script>
+</body>
+</html>

@@ -1,10 +1,11 @@
-// src/modules/houseplan/houseplan.tools.ts
 import { ToolDecorator as Tool, Widget, z, ExecutionContext, ControllerDecorator } from '@nitrostack/core';
 import { HouseplanState, HouseModel } from './houseplan.state.js';
-import { extractRoomsFromPlanImage, shoelaceAreaSqM } from './houseplan.vision.js';
+import { runMcpPipeline, shoelaceAreaSqM } from './houseplan.vision.js';
 import { resolveCityTier, getRateRangeInrPerSqft, QualityTier } from './houseplan.rates.js';
 import { DesignAgent } from './agent/design-agent.js';
 import { lookupMaterial } from './materials/material-catalog.js';
+import fs from 'fs';
+import path from 'path';
 
 @ControllerDecorator()
 export class HouseplanTools {
@@ -21,33 +22,39 @@ export class HouseplanTools {
     name: 'generate_3d_shell',
     description:
       'Extract rooms/walls from an uploaded 2D floor plan image and generate a basic ' +
-      'extruded 3D shell (walls, floor, no furniture/MEP). Returns geometry + total area.',
+      'extruded 3D shell. Provide either planImageBase64 or filePath.',
     inputSchema: z.object({
-      planImageBase64: z.string().describe('Base64-encoded floor plan image (PNG/JPG)'),
+      planImageBase64: z.string().optional().describe('Base64-encoded floor plan image (PNG/JPG)'),
+      filePath: z.string().optional().describe('Absolute or relative file path to the floor plan image'),
       floorHeightM: z.number().min(2).max(5).default(3).describe('Wall height in meters')
     })
   })
   @Widget('house-3d-viewer')
   async generateShell(
-    input: { planImageBase64: string; floorHeightM: number },
+    input: { planImageBase64?: string; filePath?: string; floorHeightM: number },
     _ctx: ExecutionContext
   ) {
-    const rooms = await extractRoomsFromPlanImage(input.planImageBase64);
-    const totalFloorAreaSqM = rooms.reduce(
-      (sum, r) => sum + shoelaceAreaSqM(r.polygon),
-      0
-    );
-
-    // Initialize per-room materials with defaults
-    const roomMaterials: Record<string, { wallColor: string; wallTexture: string; floorMaterial: string; floorColor?: string }> = {};
-    for (const room of rooms) {
-      roomMaterials[room.id] = {
-        wallColor: '#f2f0ea',
-        wallTexture: 'smooth_plaster',
-        floorMaterial: 'raw_concrete_floor',
-        floorColor: '#9B9B93',
-      };
+    let base64Image = input.planImageBase64 || '';
+    if (!base64Image && input.filePath) {
+      const trimmedPath = input.filePath.trim();
+      let resolvedPath = trimmedPath;
+      if (!fs.existsSync(resolvedPath)) {
+        resolvedPath = path.resolve(process.cwd(), trimmedPath);
+      }
+      try {
+        const fileBuffer = fs.readFileSync(resolvedPath);
+        base64Image = fileBuffer.toString('base64');
+      } catch (err) {
+        throw new Error(`Failed to read file at ${trimmedPath} (resolved as ${resolvedPath}): ${err}`);
+      }
     }
+    if (!base64Image) {
+      throw new Error('You must provide either planImageBase64 or filePath');
+    }
+    const pipelineResult = await runMcpPipeline(base64Image);
+    const rooms = pipelineResult.rooms;
+    const totalFloorAreaSqM = pipelineResult.totalFloorAreaSqM;
+    const roomMaterials = pipelineResult.roomMaterials;
 
     const model: HouseModel = {
       planId: `plan_${Date.now()}`,
@@ -75,46 +82,7 @@ export class HouseplanTools {
     };
   }
 
-  // ---------------------------------------------------------------------
-  // 2. edit_material (legacy — kept for backward compat)
-  // ---------------------------------------------------------------------
-  @Tool({
-    name: 'edit_material',
-    description:
-      "Change wall color or floor material via a natural language command, e.g. " +
-      "\"make the living room walls sage green\" or \"change the floor to oak wood\". " +
-      'Geometry is not modified — this only changes surface appearance.',
-    inputSchema: z.object({
-      command: z.string().describe('Natural language description of the desired change'),
-      // Kept simple/deterministic for the MVP: caller (or an upstream LLM step)
-      // resolves the command into a target + value. Swap for a real NLU/LLM
-      // call here once the deterministic path is working end-to-end.
-      target: z.enum(['wall', 'floor']).describe('Which surface to change'),
-      value: z.string().describe('New color (hex or name) or material name')
-    })
-  })
-  @Widget('house-3d-viewer')
-  async editMaterial(
-    input: { command: string; target: 'wall' | 'floor'; value: string },
-    _ctx: ExecutionContext
-  ) {
-    const model = this.state.get();
 
-    if (input.target === 'wall') {
-      model.materials.wallColor = input.value;
-    } else {
-      model.materials.floorMaterial = input.value;
-    }
-    this.state.set(model);
-
-    return {
-      planId: model.planId,
-      appliedCommand: input.command,
-      materials: model.materials,
-      roomMaterials: model.roomMaterials,
-      geometry: model.rooms
-    };
-  }
 
   // ---------------------------------------------------------------------
   // 3. design_modify (NEW — AI-powered agent)
