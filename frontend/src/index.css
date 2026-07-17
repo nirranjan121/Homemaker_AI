@@ -1,0 +1,113 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  *, *::before, *::after { box-sizing: border-box; }
+
+  html, body, #root {
+    @apply h-full w-full m-0 p-0;
+    background: #0a0a0f;
+    color: #e8e8f0;
+    font-family: 'Inter', system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: #12121a; }
+  ::-webkit-scrollbar-thumb { background: #2e2e50; border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: #7c6fff; }
+}
+
+@layer components {
+  /* Glass card */
+  .glass {
+    background: rgba(22, 22, 38, 0.7);
+    backdrop-filter: blur(16px);
+    border: 1px solid rgba(124, 111, 255, 0.15);
+    border-radius: 16px;
+  }
+
+  .glass-sm {
+    background: rgba(22, 22, 38, 0.5);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 10px;
+  }
+
+  /* Accent gradient button */
+  .btn-accent {
+    @apply relative overflow-hidden px-6 py-3 rounded-xl font-semibold text-sm transition-all duration-300;
+    background: linear-gradient(135deg, #7c6fff 0%, #5a4fd6 100%);
+    box-shadow: 0 0 20px rgba(124,111,255,0.3);
+  }
+  .btn-accent:hover {
+    box-shadow: 0 0 35px rgba(124,111,255,0.5);
+    transform: translateY(-1px);
+  }
+  .btn-accent:active { transform: translateY(0); }
+
+  .btn-ghost {
+    @apply px-5 py-2.5 rounded-xl font-medium text-sm transition-all duration-200;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.08);
+    color: #c0c0d8;
+  }
+  .btn-ghost:hover {
+    background: rgba(124,111,255,0.15);
+    border-color: rgba(124,111,255,0.4);
+    color: #a89fff;
+  }
+
+  /* Step indicator */
+  .step-dot {
+    @apply w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-all duration-500;
+  }
+  .step-dot.done { background: #22d3a5; color: #0a0a0f; }
+  .step-dot.running {
+    background: linear-gradient(135deg, #7c6fff, #5a4fd6);
+    box-shadow: 0 0 15px rgba(124,111,255,0.5);
+    animation: pulse 1.5s ease-in-out infinite;
+  }
+  .step-dot.pending { background: #22223a; color: #555570; }
+
+  /* Confidence badge */
+  .conf-high  { @apply text-xs px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 font-mono; }
+  .conf-mid   { @apply text-xs px-2 py-0.5 rounded-full bg-amber-500/20  text-amber-400  font-mono; }
+  .conf-low   { @apply text-xs px-2 py-0.5 rounded-full bg-red-500/20    text-red-400    font-mono; }
+
+  /* Upload zone */
+  .upload-zone {
+    @apply relative rounded-2xl border-2 border-dashed transition-all duration-300 cursor-pointer;
+    border-color: rgba(124,111,255,0.3);
+    background: rgba(124,111,255,0.04);
+  }
+  .upload-zone:hover, .upload-zone.drag-over {
+    border-color: #7c6fff;
+    background: rgba(124,111,255,0.1);
+    box-shadow: 0 0 40px rgba(124,111,255,0.15);
+  }
+
+  /* 3D viewer controls HUD */
+  .hud-pill {
+    @apply px-3 py-1.5 rounded-full text-xs font-medium;
+    background: rgba(10,10,15,0.8);
+    border: 1px solid rgba(255,255,255,0.1);
+    backdrop-filter: blur(8px);
+  }
+}
+
+/* Animated gradient border on drag-over */
+@keyframes border-dance {
+  0%, 100% { border-color: #7c6fff; }
+  50% { border-color: #22d3a5; }
+}
+
+.upload-zone.drag-over { animation: border-dance 1.5s ease-in-out infinite; }
+
+/* Shimmer skeleton */
+.shimmer {
+  background: linear-gradient(90deg, #12121a 25%, #1a1a26 50%, #12121a 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s linear infinite;
+}

@@ -1,0 +1,355 @@
+{
+  "metadata": {
+    "scale_px_to_meters": 0.03,
+    "default_wall_height_meters": 2.8,
+    "coordinate_system": "y_up_x_z_floor"
+  },
+  "walls": [
+    {
+      "id": "Wall 0",
+      "x1": 9.03,
+      "z1": 26.04,
+      "x2": 32.82,
+      "z2": 26.04,
+      "height": 2.8,
+      "thickness": 1.08,
+      "material": { "name": "concrete", "color_hex": "#FFFFFF", "roughness": 0.5 }
+    },
+    {
+      "id": "Wall 1",
+      "x1": 2.52,
+      "z1": 15.21,
+      "x2": 2.52,
+      "z2": 4.56,
+      "height": 2.8,
+      "thickness": 1.08,
+      "material": { "name": "concrete", "color_hex": "#FFFFFF", "roughness": 0.5 }
+    },
+    {
+      "id": "Wall 2",
+      "x1": 18.33,
+      "z1": 16.74,
+      "x2": 32.85,
+      "z2": 16.74,
+      "height": 2.8,
+      "thickness": 0.6,
+      "material": { "name": "concrete", "color_hex": "#FFFFFF", "roughness": 0.5 }
+    },
+    {
+      "id": "Wall 3",
+      "x1": 21.63,
+      "z1": 2.52,
+      "x2": 32.7,
+      "z2": 13.59,
+      "height": 2.8,
+      "thickness": 1.056,
+      "material": { "name": "concrete", "color_hex": "#FFFFFF", "roughness": 0.5 }
+    },
+    {
+      "id": "Wall 4",
+      "x1": 15.12,
+      "z1": 2.4,
+      "x2": 21.27,
+      "z2": 2.4,
+      "height": 2.8,
+      "thickness": 1.08,
+      "material": { "name": "concrete", "color_hex": "#FFFFFF", "roughness": 0.5 }
+    },
+    {
+      "id": "Wall 5",
+      "x1": 21.72,
+      "z1": 2.58,
+      "x2": 32.67,
+      "z2": 13.53,
+      "height": 2.8,
+      "thickness": 1.056,
+      "material": { "name": "concrete", "color_hex": "#FFFFFF", "roughness": 0.5 }
+    },
+    {
+      "id": "Wall 6",
+      "x1": 2.55,
+      "z1": 20.67,
+      "x2": 2.55,
+      "z2": 15.24,
+      "height": 2.8,
+      "thickness": 1.14,
+      "material": { "name": "concrete", "color_hex": "#FFFFFF", "roughness": 0.5 }
+    },
+    {
+      "id": "Wall 7",
+      "x1": 10.02,
+      "z1": 20.67,
+      "x2": 10.02,
+      "z2": 10.98,
+      "height": 2.8,
+      "thickness": 0.6,
+      "material": { "name": "concrete", "color_hex": "#FFFFFF", "roughness": 0.5 }
+    },
+    {
+      "id": "Wall 8",
+      "x1": 32.85,
+      "z1": 20.07,
+      "x2": 32.85,
+      "z2": 14.01,
+      "height": 2.8,
+      "thickness": 1.08,
+      "material": { "name": "concrete", "color_hex": "#FFFFFF", "roughness": 0.5 }
+    },
+    {
+      "id": "Wall 9",
+      "x1": 2.85,
+      "z1": 10.95,
+      "x2": 9.99,
+      "z2": 10.95,
+      "height": 2.8,
+      "thickness": 0.54,
+      "material": { "name": "concrete", "color_hex": "#FFFFFF", "roughness": 0.5 }
+    },
+    {
+      "id": "Wall 10",
+      "x1": 18.27,
+      "z1": 22.29,
+      "x2": 18.27,
+      "z2": 16.8,
+      "height": 2.8,
+      "thickness": 0.54,
+      "material": { "name": "concrete", "color_hex": "#FFFFFF", "roughness": 0.5 }
+    },
+    {
+      "id": "Wall 11",
+      "x1": 6,
+      "z1": 2.4,
+      "x2": 9.42,
+      "z2": 2.4,
+      "height": 2.8,
+      "thickness": 1.08,
+      "material": { "name": "concrete", "color_hex": "#FFFFFF", "roughness": 0.5 }
+    },
+    {
+      "id": "Wall 12",
+      "x1": 2.52,
+      "z1": 20.85,
+      "x2": 2.52,
+      "z2": 24.27,
+      "height": 2.8,
+      "thickness": 1.08,
+      "material": { "name": "concrete", "color_hex": "#FFFFFF", "roughness": 0.5 }
+    },
+    {
+      "id": "Wall 13",
+      "x1": 2.52,
+      "z1": 20.67,
+      "x2": 5.43,
+      "z2": 20.67,
+      "height": 2.8,
+      "thickness": 0.6,
+      "material": { "name": "concrete", "color_hex": "#FFFFFF", "roughness": 0.5 }
+    },
+    {
+      "id": "Wall 14",
+      "x1": 2.55,
+      "z1": 2.43,
+      "x2": 2.55,
+      "z2": 4.53,
+      "height": 2.8,
+      "thickness": 1.14,
+      "material": { "name": "concrete", "color_hex": "#FFFFFF", "roughness": 0.5 }
+    },
+    {
+      "id": "Wall 15",
+      "x1": 2.7,
+      "z1": 26.04,
+      "x2": 4.83,
+      "z2": 26.04,
+      "height": 2.8,
+      "thickness": 1.08,
+      "material": { "name": "concrete", "color_hex": "#FFFFFF", "roughness": 0.5 }
+    },
+    {
+      "id": "Wall 16",
+      "x1": 2.58,
+      "z1": 2.4,
+      "x2": 4.71,
+      "z2": 2.4,
+      "height": 2.8,
+      "thickness": 1.08,
+      "material": { "name": "concrete", "color_hex": "#FFFFFF", "roughness": 0.5 }
+    },
+    {
+      "id": "Wall 17",
+      "x1": 32.85,
+      "z1": 26.01,
+      "x2": 32.85,
+      "z2": 25.05,
+      "height": 2.8,
+      "thickness": 1.08,
+      "material": { "name": "concrete", "color_hex": "#FFFFFF", "roughness": 0.5 }
+    },
+    {
+      "id": "Wall 18",
+      "x1": 2.52,
+      "z1": 24.36,
+      "x2": 2.52,
+      "z2": 25.5,
+      "height": 2.8,
+      "thickness": 1.08,
+      "material": { "name": "concrete", "color_hex": "#FFFFFF", "roughness": 0.5 }
+    },
+    {
+      "id": "Wall 19",
+      "x1": 5.1,
+      "z1": 2.4,
+      "x2": 5.94,
+      "z2": 2.4,
+      "height": 2.8,
+      "thickness": 1.08,
+      "material": { "name": "concrete", "color_hex": "#FFFFFF", "roughness": 0.5 }
+    },
+    {
+      "id": "Wall 20",
+      "x1": 9.09,
+      "z1": 20.67,
+      "x2": 9.99,
+      "z2": 20.67,
+      "height": 2.8,
+      "thickness": 0.54,
+      "material": { "name": "concrete", "color_hex": "#FFFFFF", "roughness": 0.5 }
+    },
+    {
+      "id": "Wall 21",
+      "x1": 9.45,
+      "z1": 2.4,
+      "x2": 10.11,
+      "z2": 2.4,
+      "height": 2.8,
+      "thickness": 1.08,
+      "material": { "name": "concrete", "color_hex": "#FFFFFF", "roughness": 0.5 }
+    }
+  ],
+  "rooms": [
+    {
+      "name": "Kitchen",
+      "area_sq_ft": 46,
+      "center": { "x": 6.705, "z": 15.2955 },
+      "floor_material": { "type": "hardwood", "color_hex": "#964B00", "texture_description": "oak wood" },
+      "wall_paint_color_hex": "#F7F7F7"
+    },
+    {
+      "name": "Living Room",
+      "area_sq_ft": 208,
+      "center": { "x": 20.505, "z": 9.945 },
+      "floor_material": { "type": "carpet", "color_hex": "#786C3B", "texture_description": "soft plush" },
+      "wall_paint_color_hex": "#E5E5EA"
+    },
+    {
+      "name": "Bath",
+      "area_sq_ft": 53,
+      "center": { "x": 4.7055, "z": 12.955 },
+      "floor_material": { "type": "tile", "color_hex": "#87CEEB", "texture_description": "ceramic" },
+      "wall_paint_color_hex": "#D3D3D3"
+    },
+    {
+      "name": "Entrance",
+      "area_sq_ft": 87,
+      "center": { "x": 14.0955, "z": 13.945 },
+      "floor_material": { "type": "concrete", "color_hex": "#707070", "texture_description": "rough" },
+      "wall_paint_color_hex": "#C9C9C9"
+    },
+    {
+      "name": "Bedroom",
+      "area_sq_ft": 101,
+      "center": { "x": 26.565, "z": 16.145 },
+      "floor_material": { "type": "hardwood", "color_hex": "#A8753D", "texture_description": "maple wood" },
+      "wall_paint_color_hex": "#B3B3B3"
+    }
+  ],
+  "openings": [
+    {
+      "type": "door",
+      "position": { "x": 15.495, "z": 11.185 },
+      "width": 0.9,
+      "height": 2.1,
+      "sill_height": 0.1,
+      "associated_wall_id": "Wall 7"
+    },
+    {
+      "type": "door",
+      "position": { "x": 24.585, "z": 16.625 },
+      "width": 0.9,
+      "height": 2.1,
+      "sill_height": 0.1,
+      "associated_wall_id": "Wall 14"
+    },
+    {
+      "type": "door",
+      "position": { "x": 9.945, "z": 7.525 },
+      "width": 0.9,
+      "height": 2.1,
+      "sill_height": 0.1,
+      "associated_wall_id": "Wall 20"
+    }
+  ],
+  "fixtures_furniture": [
+    {
+      "type": "stove",
+      "room": "Kitchen",
+      "position": { "x": 5.415, "y": 0.85, "z": 10.465 },
+      "rotation_y_deg": 0,
+      "bounding_box": { "w": 0.6, "h": 0.6, "d": 0.6 }
+    },
+    {
+      "type": "sink",
+      "room": "Kitchen",
+      "position": { "x": 6.195, "y": 0.85, "z": 10.465 },
+      "rotation_y_deg": 0,
+      "bounding_box": { "w": 0.6, "h": 0.6, "d": 0.6 }
+    },
+    {
+      "type": "refrigerator",
+      "room": "Kitchen",
+      "position": { "x": 7.095, "y": 0.85, "z": 10.465 },
+      "rotation_y_deg": 0,
+      "bounding_box": { "w": 0.6, "h": 1.2, "d": 0.6 }
+    },
+    {
+      "type": "toilet",
+      "room": "Bath",
+      "position": { "x": 3.075, "y": 0.4, "z": 13.095 },
+      "rotation_y_deg": 0,
+      "bounding_box": { "w": 0.6, "h": 0.9, "d": 0.6 }
+    },
+    {
+      "type": "shower",
+      "room": "Bath",
+      "position": { "x": 3.495, "y": 0.9, "z": 12.945 },
+      "rotation_y_deg": 0,
+      "bounding_box": { "w": 0.9, "h": 1.5, "d": 0.9 }
+    },
+    {
+      "type": "bathtub",
+      "room": "Bath",
+      "position": { "x": 2.985, "y": 0.65, "z": 13.335 },
+      "rotation_y_deg": 0,
+      "bounding_box": { "w": 1.2, "h": 0.6, "d": 0.9 }
+    }
+  ],
+  "lighting": [
+    {
+      "type": "ambient",
+      "position": { "x": 17.085, "y": 2.1, "z": 13.125 },
+      "color_hex": "#FFFFFF",
+      "intensity": 0.5
+    },
+    {
+      "type": "point",
+      "position": { "x": 20.625, "y": 2.8, "z": 16.875 },
+      "color_hex": "#FFFFFF",
+      "intensity": 1
+    }
+  ],
+  "walkthrough_camera": {
+    "start_position": { "x": 14.16, "y": 1.68, "z": 11.64 },
+    "target_position": { "x": 23.19, "y": 0.96, "z": 18.6 },
+    "fov": 45
+  }
+}
