@@ -28,6 +28,9 @@ export interface HouseModel {
  * In-memory store for the single active session's house model.
  * Swap for Supabase/Firebase per-session storage once this needs to be multi-user.
  */
+import { Injectable } from '@nitrostack/core';
+
+@Injectable()
 export class HouseplanState {
   private current: HouseModel | null = null;
 
