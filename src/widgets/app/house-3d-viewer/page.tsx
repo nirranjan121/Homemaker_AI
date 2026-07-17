@@ -1,3 +1,5 @@
+"use client";
+
 import React, { useEffect, useRef, useState } from 'react';
 import { buildHouseScene, type SceneHandle } from './scene';
 import type { RoomShape, FloorMaterial, CostEstimate } from '../../../modules/houseplan/houseplan.types';
@@ -23,14 +25,15 @@ const MATERIAL_OPTIONS: { key: FloorMaterial; label: string }[] = [
   { key: 'carpet', label: 'Carpet' },
 ];
 
-export default function HouseViewer(props: HouseViewerProps) {
-  const rooms = props.rooms ?? [];
+export default function HouseViewer(props: any) {
+  const typedProps = (props ?? {}) as HouseViewerProps;
+  const rooms = typedProps.rooms ?? [];
   const containerRef = useRef<HTMLDivElement>(null);
   const sceneRef = useRef<SceneHandle | null>(null);
 
-  const [wallColorHex, setWallColorHex] = useState(props.wallColorHex ?? '#e8e4dc');
+  const [wallColorHex, setWallColorHex] = useState(typedProps.wallColorHex ?? '#e8e4dc');
   const [floorMaterials, setFloorMaterials] = useState<Record<string, FloorMaterial>>(
-    props.floorMaterials ?? Object.fromEntries(rooms.map((r) => [r.id, 'oak' as FloorMaterial])),
+    typedProps.floorMaterials ?? Object.fromEntries(rooms.map((r) => [r.id, 'oak' as FloorMaterial])),
   );
   const [selectedRoomId, setSelectedRoomId] = useState(rooms[0]?.id);
 
@@ -113,11 +116,11 @@ export default function HouseViewer(props: HouseViewerProps) {
         </div>
       </div>
 
-      {props.costEstimate && (
+      {typedProps.costEstimate && (
         <div style={{ fontSize: 13, color: '#555' }}>
-          Estimated cost: ₹{props.costEstimate.minInr.toLocaleString('en-IN')} – ₹
-          {props.costEstimate.maxInr.toLocaleString('en-IN')} for{' '}
-          {props.costEstimate.areaSqft.toLocaleString('en-IN')} sqft ({props.costEstimate.rateTier})
+          Estimated cost: ₹{typedProps.costEstimate.minInr.toLocaleString('en-IN')} – ₹
+          {typedProps.costEstimate.maxInr.toLocaleString('en-IN')} for{' '}
+          {typedProps.costEstimate.areaSqft.toLocaleString('en-IN')} sqft ({typedProps.costEstimate.rateTier})
         </div>
       )}
     </div>
