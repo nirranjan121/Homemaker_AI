@@ -1,7 +1,11 @@
 import express from 'express';
 import cors from 'cors';
 import multer from 'multer';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import { floorplanTools } from './modules/floorplan/floorplan.tools.js';
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 export function startExpressServer() {
     const app = express();
     app.use(cors({ origin: '*' }));
@@ -54,6 +58,11 @@ export function startExpressServer() {
             console.error(e);
             res.status(500).json({ error: e.message });
         }
+    });
+    const frontendDistPath = path.join(__dirname, '../../frontend/dist');
+    app.use(express.static(frontendDistPath));
+    app.get('/{*splat}', (req, res) => {
+        res.sendFile(path.join(frontendDistPath, 'index.html'));
     });
     const port = process.env.EXPRESS_PORT || 8000;
     app.listen(port, () => {

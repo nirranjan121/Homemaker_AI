@@ -70,7 +70,7 @@ export function startExpressServer() {
   const frontendDistPath = path.join(__dirname, '../../frontend/dist');
   app.use(express.static(frontendDistPath));
 
-  app.get('*', (req, res) => {
+  app.get('/{*splat}', (req, res) => {
     res.sendFile(path.join(frontendDistPath, 'index.html'));
   });
 
