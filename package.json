@@ -4,9 +4,13 @@
   "description": "MCP server that turns a 2D house floor plan into an interactive 3D shell, with material editing and rough cost estimation, rendered via NitroStack widgets.",
   "type": "module",
   "scripts": {
-    "dev": "tsx watch src/index.ts",
-    "build": "tsc -p tsconfig.json",
-    "start": "node dist/index.js"
+    "dev": "nitrostack-cli dev",
+    "build": "nitrostack-cli build",
+    "start": "npm run build && nitrostack-cli start",
+    "start:prod": "nitrostack-cli start",
+    "upgrade": "nitrostack-cli upgrade",
+    "install:all": "nitrostack-cli install",
+    "widget": "npm --prefix src/widgets"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
@@ -16,8 +20,13 @@
     "zod": "^3.23.8"
   },
   "devDependencies": {
+    "@nitrostack/cli": "^1.0.14",
     "@types/node": "^20.14.0",
     "tsx": "^4.16.0",
     "typescript": "^5.5.0"
+  },
+  "author": "SideQuest",
+  "nitrostack": {
+    "skillsVersion": "1.0.0"
   }
 }
