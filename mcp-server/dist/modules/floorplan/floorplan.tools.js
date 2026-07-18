@@ -18,9 +18,24 @@ import { ChatbotAgent } from '../chatbot/agent/chatbot-agent.js';
 let floorplanTools = class floorplanTools {
     async analyzeFloorPlan(input, context) {
         context.logger.info(`Running native analyze_floor_plan...`);
-        // Strip data:image/...;base64, if present
-        const base64Data = input.image_b64.replace(/^data:image\/\w+;base64,/, "");
-        const buffer = Buffer.from(base64Data, 'base64');
+        let buffer;
+        if (input.image_url) {
+            // Fetch from URL (ChatGPT passes images as URLs)
+            context.logger.info(`Fetching image from URL: ${input.image_url}`);
+            const res = await fetch(input.image_url);
+            if (!res.ok)
+                throw new Error(`Failed to fetch image from URL: ${res.statusText}`);
+            const arrayBuffer = await res.arrayBuffer();
+            buffer = Buffer.from(arrayBuffer);
+        }
+        else if (input.image_b64) {
+            // Strip data URI prefix if present (e.g. data:image/png;base64,...)
+            const raw = input.image_b64.replace(/^data:image\/\w+;base64,/, '');
+            buffer = Buffer.from(raw, 'base64');
+        }
+        else {
+            throw new Error('Either image_url or image_b64 must be provided.');
+        }
         // 1. Preprocess
         const processed = await preprocessImage(buffer);
         // 2. Gemini Parse
@@ -76,9 +91,10 @@ let floorplanTools = class floorplanTools {
 __decorate([
     Tool({
         name: 'analyze_floor_plan',
-        description: 'Analyzes a floor plan image and returns the structured JSON floor plan data.',
+        description: 'Analyzes a 2D floor plan image and returns structured JSON with all walls, rooms, doors, windows and scale. Accepts either a public image URL or a base64-encoded image string.',
         inputSchema: z.object({
-            image_b64: z.string().describe('Base64 encoded string of the floor plan image (can include data URL prefix)'),
+            image_url: z.string().optional().describe('Public URL of the floor plan image (preferred when available)'),
+            image_b64: z.string().optional().describe('Base64 encoded string of the floor plan image (with or without data URI prefix)'),
         }),
     }),
     __metadata("design:type", Function),

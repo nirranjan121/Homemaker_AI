@@ -1,7 +1,8 @@
 import { ExecutionContext } from '@nitrostack/core';
 export declare class floorplanTools {
     analyzeFloorPlan(input: {
-        image_b64: string;
+        image_url?: string;
+        image_b64?: string;
     }, context: ExecutionContext): Promise<{
         plan: any;
         processed_image: string;
