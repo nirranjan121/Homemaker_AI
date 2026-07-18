@@ -1,24 +1,40 @@
 import { ExecutionContext } from '@nitrostack/core';
-/**
- * Floorplan Tools
- * Exposes the Python backend capabilities to the MCP framework.
- */
 export declare class floorplanTools {
     analyzeFloorPlan(input: {
         image_b64: string;
-        width: number;
-        height: number;
-        mime_type: string;
-    }, context: ExecutionContext): Promise<unknown>;
+    }, context: ExecutionContext): Promise<{
+        plan: any;
+        processed_image: string;
+    }>;
     estimateCost(input: {
         plan: any;
         location: string;
         quality: string;
-    }, context: ExecutionContext): Promise<unknown>;
+    }, context: ExecutionContext): Promise<{
+        location: import("../costestimator/costestimator.types.js").LocationInfo;
+        inputs: {
+            houseAreaSqFt: number;
+            floors: number;
+            quality: "basic" | "standard" | "premium";
+            currency: string;
+        };
+        constructionCost: {
+            low: number;
+            high: number;
+            mid: number;
+        };
+        materialBreakdown: import("../costestimator/costestimator.types.js").MaterialBreakdown[];
+        totalMaterialCost: number;
+        rates: import("../costestimator/costestimator.types.js").LiveRates;
+        fetchedAt: string;
+    }>;
     chat(input: {
         message: string;
         plan: any;
         history: any[];
-    }, context: ExecutionContext): Promise<unknown>;
+    }, context: ExecutionContext): Promise<{
+        answer: string;
+        suggestedQuery?: string;
+    }>;
 }
 //# sourceMappingURL=floorplan.tools.d.ts.map

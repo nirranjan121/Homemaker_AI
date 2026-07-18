@@ -11,6 +11,7 @@
 import 'dotenv/config';
 import { McpApplicationFactory } from '@nitrostack/core';
 import { AppModule } from './app.module.js';
+import { startExpressServer } from './express.server.js';
 /**
  * Bootstrap the application
  */
@@ -18,6 +19,8 @@ async function bootstrap() {
     // Create and start the MCP server
     const server = await McpApplicationFactory.create(AppModule);
     await server.start();
+    // Start the Express REST API for the React frontend
+    startExpressServer();
 }
 // Start the application
 bootstrap().catch((error) => {
