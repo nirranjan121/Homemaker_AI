@@ -6,77 +6,77 @@
     "tier": "metro"
   },
   "inputs": {
-    "houseAreaSqFt": 500,
+    "houseAreaSqFt": 800,
     "floors": 1,
-    "quality": "standard",
+    "quality": "basic",
     "currency": "INR"
   },
   "constructionCost": {
-    "low": 1250000,
-    "high": 1750000,
-    "mid": 1500000
+    "low": 1440000,
+    "high": 2000000,
+    "mid": 1720000
   },
   "materialBreakdown": [
     {
       "item": "OPC Cement (53-grade)",
-      "quantity": 200,
+      "quantity": 272,
       "unit": "bags (50 kg)",
       "unitPriceInr": 430,
-      "totalInr": 86000
+      "totalInr": 116960
     },
     {
       "item": "TMT Steel Rebar (Fe-500)",
-      "quantity": 2000,
+      "quantity": 2720,
       "unit": "kg",
       "unitPriceInr": 68,
-      "totalInr": 136000
+      "totalInr": 184960
     },
     {
       "item": "River Sand / M-Sand",
-      "quantity": 450,
+      "quantity": 612,
       "unit": "cft",
       "unitPriceInr": 55,
-      "totalInr": 24750
+      "totalInr": 33660
     },
     {
       "item": "20 mm Aggregate (Jelly)",
-      "quantity": 550,
+      "quantity": 748,
       "unit": "cft",
       "unitPriceInr": 45,
-      "totalInr": 24750
+      "totalInr": 33660
     },
     {
       "item": "Bricks (Red Clay / Fly-Ash)",
-      "quantity": 4250,
+      "quantity": 5780,
       "unit": "nos",
       "unitPriceInr": 7,
-      "totalInr": 29750
+      "totalInr": 40460
     },
     {
       "item": "Exterior Emulsion Paint",
-      "quantity": 15,
+      "quantity": 20,
       "unit": "litres",
       "unitPriceInr": 280,
-      "totalInr": 4200
+      "totalInr": 5600
     },
     {
       "item": "Vitrified Floor Tiles",
-      "quantity": 500,
+      "quantity": 680,
       "unit": "sq ft",
       "unitPriceInr": 75,
-      "totalInr": 37500
+      "totalInr": 51000
     }
   ],
-  "totalMaterialCost": 342950,
+  "totalMaterialCost": 466300,
   "totalProjectCost": {
-    "low": 1250000,
-    "high": 1750000
+    "low": 1440000,
+    "high": 2000000
   },
   "rates": {
     "constructionRateInrPerSqft": {
-      "low": 2500,
-      "high": 3500,
-      "mid": 3000
+      "low": 1800,
+      "high": 2500,
+      "mid": 2150
     },
     "materialPrices": {
       "cementInrPerBag": 430,
@@ -87,9 +87,9 @@
       "paintInrPerLitre": 280,
       "tilesInrPerSqft": 75
     },
-    "fetchedAt": "2026-07-18T06:56:38.338Z",
+    "fetchedAt": "2026-07-18T07:27:14.446Z",
     "sources": []
   },
   "disclaimer": "Feasibility-stage estimate based on live internet data. Construction costs include labour + materials (±20-30% variance). Land rates are indicative market averages. Engage a structural engineer and quantity surveyor for a formal BOQ before procurement.",
-  "fetchedAt": "2026-07-18T06:56:38.338Z"
+  "fetchedAt": "2026-07-18T07:27:14.446Z"
 }
