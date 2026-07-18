@@ -3,8 +3,7 @@
   "version": "1.0.0",
   "description": "3D Floor Plan AI Monorepo",
   "scripts": {
-    "postinstall": "npm install --prefix frontend && npm install --prefix mcp-server",
-    "build": "npm run build --prefix frontend && npm run build --prefix mcp-server",
+    "build": "npm install --prefix frontend && npm run build --prefix frontend && npm install --prefix mcp-server && npm run build --prefix mcp-server",
     "start": "npm start --prefix mcp-server"
   }
 }
