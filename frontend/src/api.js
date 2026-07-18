@@ -2,7 +2,7 @@
  * api.js — Typed fetch wrappers for the FastAPI backend
  */
 
-const BASE = '/api'
+const BASE = import.meta.env.VITE_API_URL || '/api'
 
 export async function preprocessImage(file) {
   const form = new FormData()

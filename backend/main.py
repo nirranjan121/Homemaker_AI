@@ -25,10 +25,12 @@ import ai_verifier
 
 app = FastAPI(title="Floor Plan 3D API", version="1.0.0")
 
-# Allow Vite dev server
+# Allow configured origins or fallback to dev ones
+allowed_origins = os.getenv("ALLOWED_ORIGINS", "http://localhost:5173,http://localhost:3000,http://localhost:5174").split(",")
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://localhost:3000", "http://localhost:5174"],
+    allow_origins=allowed_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
