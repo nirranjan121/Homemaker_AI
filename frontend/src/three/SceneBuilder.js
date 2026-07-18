@@ -18,7 +18,7 @@ const WALL_HEIGHT = 2.7   // metres
 const WALL_MIN_THICKNESS = 0.05  // metres minimum
 const DEFAULT_PPM = 100   // pixels per metre fallback
 
-export function buildScene(plan) {
+export function buildScene(plan, roomMaterials = {}) {
   clearTextureCache()
 
   const scene = new THREE.Scene()
@@ -171,20 +171,48 @@ export function buildScene(plan) {
     const points2d = poly.map(p => new THREE.Vector2(px2m(p[0]), px2m(p[1])))
 
     const shape = new THREE.Shape(points2d)
+    
+    // Create Floor Geometry facing UP
     const floorGeo = new THREE.ShapeGeometry(shape)
+    floorGeo.rotateX(Math.PI / 2)
+    const index = floorGeo.index.array
+    for (let i = 0; i < index.length; i += 3) {
+      const tmp = index[i + 1]
+      index[i + 1] = index[i + 2]
+      index[i + 2] = tmp
+    }
+    floorGeo.computeVertexNormals()
+
+    // Determine Custom Floor Material
+    let floorMat = getFloorMaterial(room.type);
+    let customHex = null;
+    if (roomMaterials) {
+      const roomKey = Object.keys(roomMaterials).find(k => k.toLowerCase() === room.name.toLowerCase());
+      if (roomKey) customHex = roomMaterials[roomKey];
+    }
+    
+    if (customHex) {
+      floorMat = new THREE.MeshStandardMaterial({
+        color: new THREE.Color(customHex),
+        roughness: 0.8,
+        metalness: 0.1,
+        side: THREE.FrontSide
+      });
+    }
 
     // Floor
-    const floorMesh = new THREE.Mesh(floorGeo, getFloorMaterial(room.type))
-    floorMesh.rotation.x = Math.PI / 2
+    const floorMesh = new THREE.Mesh(floorGeo, floorMat)
     floorMesh.position.y = 0.001   // just above y=0
     floorMesh.receiveShadow = true
     floorMesh.userData = { type: 'floor', roomId: room.id, roomName: room.name, flagged: room.flagged }
     scene.add(floorMesh)
 
-    // Ceiling
+    // Ceiling Geometry facing DOWN
     const ceilGeo = new THREE.ShapeGeometry(shape)
+    ceilGeo.rotateX(Math.PI / 2)
+    ceilGeo.computeVertexNormals()
+
     const ceilMesh = new THREE.Mesh(ceilGeo, getCeilingMaterial())
-    ceilMesh.rotation.x = Math.PI / 2
     ceilMesh.position.y = WALL_HEIGHT - 0.001
     ceilMesh.visible = false // Default to naked view
     ceilMesh.userData = { type: 'ceiling', roomId: room.id }
@@ -232,7 +260,7 @@ export function buildScene(plan) {
   base.receiveShadow = true
   scene.add(base)
 
-  return { scene, wallAABBs, roomCentroids, roomMeshes }
+  return { scene, wallAABBs, roomCentroids, roomMeshes, parsedRooms: plan.rooms }
 }
 
 // ──────────────────────────────────────────────────────────────

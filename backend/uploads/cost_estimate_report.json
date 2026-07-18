@@ -1,0 +1,95 @@
+{
+  "location": {
+    "query": "Bengaluru",
+    "city": "Bengaluru",
+    "country": "India",
+    "tier": "metro"
+  },
+  "inputs": {
+    "houseAreaSqFt": 500,
+    "floors": 1,
+    "quality": "standard",
+    "currency": "INR"
+  },
+  "constructionCost": {
+    "low": 1250000,
+    "high": 1750000,
+    "mid": 1500000
+  },
+  "materialBreakdown": [
+    {
+      "item": "OPC Cement (53-grade)",
+      "quantity": 200,
+      "unit": "bags (50 kg)",
+      "unitPriceInr": 430,
+      "totalInr": 86000
+    },
+    {
+      "item": "TMT Steel Rebar (Fe-500)",
+      "quantity": 2000,
+      "unit": "kg",
+      "unitPriceInr": 68,
+      "totalInr": 136000
+    },
+    {
+      "item": "River Sand / M-Sand",
+      "quantity": 450,
+      "unit": "cft",
+      "unitPriceInr": 55,
+      "totalInr": 24750
+    },
+    {
+      "item": "20 mm Aggregate (Jelly)",
+      "quantity": 550,
+      "unit": "cft",
+      "unitPriceInr": 45,
+      "totalInr": 24750
+    },
+    {
+      "item": "Bricks (Red Clay / Fly-Ash)",
+      "quantity": 4250,
+      "unit": "nos",
+      "unitPriceInr": 7,
+      "totalInr": 29750
+    },
+    {
+      "item": "Exterior Emulsion Paint",
+      "quantity": 15,
+      "unit": "litres",
+      "unitPriceInr": 280,
+      "totalInr": 4200
+    },
+    {
+      "item": "Vitrified Floor Tiles",
+      "quantity": 500,
+      "unit": "sq ft",
+      "unitPriceInr": 75,
+      "totalInr": 37500
+    }
+  ],
+  "totalMaterialCost": 342950,
+  "totalProjectCost": {
+    "low": 1250000,
+    "high": 1750000
+  },
+  "rates": {
+    "constructionRateInrPerSqft": {
+      "low": 2500,
+      "high": 3500,
+      "mid": 3000
+    },
+    "materialPrices": {
+      "cementInrPerBag": 430,
+      "steelInrPerKg": 68,
+      "sandInrPerCft": 55,
+      "aggregateInrPerCft": 45,
+      "brickInrPerThousand": 7000,
+      "paintInrPerLitre": 280,
+      "tilesInrPerSqft": 75
+    },
+    "fetchedAt": "2026-07-18T06:56:38.338Z",
+    "sources": []
+  },
+  "disclaimer": "Feasibility-stage estimate based on live internet data. Construction costs include labour + materials (±20-30% variance). Land rates are indicative market averages. Engage a structural engineer and quantity surveyor for a formal BOQ before procurement.",
+  "fetchedAt": "2026-07-18T06:56:38.338Z"
+}

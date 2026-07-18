@@ -8,6 +8,9 @@ Endpoints:
 """
 import io
 import json
+import os
+import subprocess
+import traceback
 from fastapi import FastAPI, File, UploadFile, HTTPException, Body
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
@@ -48,6 +51,18 @@ class VerifyRequest(BaseModel):
 class AiVerifyRequest(BaseModel):
     plan_b64: str       # base64 of the 2D floor plan image
     plan_json: dict     # the JSON plan data
+
+class EstimateRequest(BaseModel):
+    plan_json: dict
+    location: str = "Bengaluru"
+    quality: str = "standard"
+    floors: int = 1
+    plot_area_sqyd: Optional[float] = None
+
+class ChatRequest(BaseModel):
+    plan_json: dict
+    question: str
+    history: list = []
 
 @app.get("/health")
 def health():
@@ -143,6 +158,68 @@ async def full_pipeline(file: UploadFile = File(...)):
         raise HTTPException(status_code=502, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Pipeline error: {str(e)}")
+
+UPLOAD_DIR = os.path.join(os.path.dirname(__file__), "uploads")
+os.makedirs(UPLOAD_DIR, exist_ok=True)
+
+@app.post("/estimate-cost")
+async def estimate_cost(req: EstimateRequest):
+    spec_path = os.path.join(UPLOAD_DIR, "3d_model_spec.json")
+    with open(spec_path, "w") as f:
+        json.dump(req.plan_json, f)
+        
+    try:
+        cmd = ["npx.cmd", "--no-install", "tsx", "run_estimation.ts", req.location, req.quality, str(req.floors)]
+        if req.plot_area_sqyd:
+            cmd.append(str(req.plot_area_sqyd))
+            
+        env = os.environ.copy()
+        
+        result = subprocess.run(
+            cmd,
+            cwd=os.path.join(os.path.dirname(__file__), "dream_view_ai"),
+            env=env,
+            capture_output=True,
+            text=True
+        )
+        if result.returncode != 0:
+            raise HTTPException(status_code=500, detail=f"TS execution failed: {result.stderr}")
+            
+        report_path = os.path.join(UPLOAD_DIR, "cost_estimate_report.json")
+        with open(report_path, "r") as rf:
+            report = json.load(rf)
+            
+        return JSONResponse(content=report)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Cost estimation failed: {str(e)}")
+
+@app.post("/chat")
+async def chat(req: ChatRequest):
+    spec_path = os.path.join(UPLOAD_DIR, "3d_model_spec.json")
+    with open(spec_path, "w") as f:
+        json.dump(req.plan_json, f)
+        
+    try:
+        history_json = json.dumps(req.history)
+        cmd = ["npx.cmd", "--no-install", "tsx", "run_chatbot.ts", req.question, history_json]
+        
+        env = os.environ.copy()
+        
+        result = subprocess.run(
+            cmd,
+            cwd=os.path.join(os.path.dirname(__file__), "dream_view_ai"),
+            env=env,
+            capture_output=True,
+            text=True
+        )
+        if result.returncode != 0:
+            raise HTTPException(status_code=500, detail=f"Chatbot execution failed: {result.stderr}")
+            
+        response_data = json.loads(result.stdout.strip())
+        return JSONResponse(content=response_data)
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Chatbot call failed: {str(e)}")
 
 if __name__ == "__main__":
     import uvicorn

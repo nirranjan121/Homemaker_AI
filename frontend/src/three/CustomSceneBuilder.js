@@ -136,7 +136,7 @@ function convexHull2D(points) {
   return lower.concat(upper)
 }
 
-export function buildCustomScene(rawPlan) {
+export function buildCustomScene(rawPlan, roomMaterials = {}) {
   // ═══════════════════════════════════════════════════════════
   // 0. DATA NORMALIZATION & SCALING
   // ═══════════════════════════════════════════════════════════
@@ -397,16 +397,63 @@ export function buildCustomScene(rawPlan) {
   // Run flood fill to find the REAL enclosed rooms
   const { regions, W, H, RES } = findRoomsByFloodFill(plan.walls);
 
+  // Map JSON rooms to the real regions based on proximity FIRST so we can color them
+  const mappedRegions = new Set();
+  for (const room of (plan.rooms || [])) {
+    let cx = room.center.x, cz = room.center.z;
+    
+    let bestReg = null, minDist = Infinity;
+    for (const reg of regions) {
+      if (mappedRegions.has(reg)) continue;
+      const d = Math.hypot(reg.cx - cx, reg.cz - cz);
+      if (d < minDist) { minDist = d; bestReg = reg; }
+    }
+
+    if (bestReg && minDist < 15.0) {
+      cx = bestReg.cx;
+      cz = bestReg.cz;
+      mappedRegions.add(bestReg);
+      bestReg.roomName = room.name; // Tag region with room name
+      room.computedW = bestReg.w;
+      room.computedD = bestReg.d;
+      room.computedArea = bestReg.area;
+    }
+  }
+
   // Generate a beautiful painted floor texture for all detected rooms
   const floorData = new Uint8Array(W * H * 4);
-  const colors = [
+  const fallbackColors = [
     [60, 100, 160], [160, 80, 80], [80, 140, 90], [140, 120, 60], [120, 70, 130],
     [50, 130, 140], [140, 90, 110], [90, 100, 130]
   ];
 
   for (let i = 0; i < regions.length; i++) {
     const reg = regions[i];
-    const [r, g, b] = colors[i % colors.length];
+    
+    // Determine color
+    let r, g, b;
+    
+    // Perform case-insensitive lookup to match Chatbot output with Scene room names
+    let customHex = null;
+    if (reg.roomName && roomMaterials) {
+      const roomKey = Object.keys(roomMaterials).find(k => k.toLowerCase() === reg.roomName.toLowerCase());
+      if (roomKey) customHex = roomMaterials[roomKey];
+    }
+
+    if (customHex) {
+      const hex = customHex.replace('#', '');
+      r = parseInt(hex.substring(0, 2), 16);
+      g = parseInt(hex.substring(2, 4), 16);
+      b = parseInt(hex.substring(4, 6), 16);
+      
+      // Fallback if NaN (e.g. if chatbot outputs "yellow" instead of hex)
+      if (isNaN(r)) r = 200;
+      if (isNaN(g)) g = 200;
+      if (isNaN(b)) b = 200;
+    } else {
+      [r, g, b] = fallbackColors[i % fallbackColors.length];
+    }
+
     for (let p = 0; p < reg.pixels.length; p += 2) {
       const px = reg.pixels[p];
       const py = reg.pixels[p + 1];
@@ -414,7 +461,7 @@ export function buildCustomScene(rawPlan) {
       floorData[idx] = r;
       floorData[idx + 1] = g;
       floorData[idx + 2] = b;
-      floorData[idx + 3] = 140; // 55% opacity
+      floorData[idx + 3] = customHex ? 200 : 140; // higher opacity for custom colors
     }
   }
 
@@ -430,26 +477,15 @@ export function buildCustomScene(rawPlan) {
   floorPlane.position.set((W / RES) / 2, 0.015, (H / RES) / 2);
   scene.add(floorPlane);
 
-  // Map JSON rooms to the real regions based on proximity
-  const mappedRegions = new Set();
   for (const room of (plan.rooms || [])) {
     let cx = room.center.x, cz = room.center.z;
-    
-    // Find the closest real enclosed region
-    let bestReg = null, minDist = Infinity;
-    for (const reg of regions) {
-      if (mappedRegions.has(reg)) continue;
-      const d = Math.hypot(reg.cx - cx, reg.cz - cz);
-      if (d < minDist) { minDist = d; bestReg = reg; }
-    }
-
-    if (bestReg && minDist < 15.0) {
-      cx = bestReg.cx;
-      cz = bestReg.cz;
-      mappedRegions.add(bestReg);
-      room.computedW = bestReg.w;
-      room.computedD = bestReg.d;
-      room.computedArea = bestReg.area;
+    if (room.computedW) {
+      // It was mapped, use the region centroid
+      for (const reg of mappedRegions) {
+        if (reg.roomName === room.name) {
+          cx = reg.cx; cz = reg.cz; break;
+        }
+      }
     }
 
     // Floating text label

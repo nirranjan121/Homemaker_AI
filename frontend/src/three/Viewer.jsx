@@ -15,7 +15,7 @@ import { resolveCollision } from './WallCollider.js'
 const WALK_SPEED = 4.0   // m/s
 const FLY_DURATION = 800 // ms
 
-const Viewer = forwardRef(function Viewer({ plan, viewMode, showRoof, onRoomEnter, onRoomsParsed }, ref) {
+const Viewer = forwardRef(function Viewer({ plan, viewMode, showRoof, onRoomEnter, onRoomsParsed, roomMaterials }, ref) {
   const mountRef = useRef(null)
   const stateRef = useRef({
     renderer: null, scene: null, camera: null,
@@ -101,12 +101,7 @@ const Viewer = forwardRef(function Viewer({ plan, viewMode, showRoof, onRoomEnte
     s.camera = camera
 
     // 3. Build Scene based on Schema
-    let sceneData;
-    if (plan.metadata?.coordinate_system === 'y_up_x_z_floor') {
-      sceneData = buildCustomScene(plan)
-    } else {
-      sceneData = buildScene(plan)
-    }
+    const sceneData = buildScene(plan, roomMaterials);
     const { scene, wallAABBs, roomCentroids, roomMeshes, startPosition, parsedRooms } = sceneData
     s.scene = scene
     s.wallAABBs = wallAABBs
@@ -182,7 +177,7 @@ const Viewer = forwardRef(function Viewer({ plan, viewMode, showRoof, onRoomEnte
       renderer.dispose()
       if (el.contains(renderer.domElement)) el.removeChild(renderer.domElement)
     }
-  }, [plan])
+  }, [plan, roomMaterials])
 
   // ── Mode switching ─────────────────────────────────────────
   useEffect(() => {

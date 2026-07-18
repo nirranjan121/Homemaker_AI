@@ -3,6 +3,9 @@
  */
 import React, { useState, useRef, useCallback } from 'react'
 import Viewer from './three/Viewer.jsx'
+import CostEstimatorPanel from './components/CostEstimatorPanel.jsx'
+import ChatbotPanel from './components/ChatbotPanel.jsx'
+import DesignEditorPanel from './components/DesignEditorPanel.jsx'
 
 export default function App() {
   const [screen, setScreen] = useState('LANDING')
@@ -13,6 +16,7 @@ export default function App() {
   const [showRoof, setShowRoof] = useState(false)
   const [activeRoom, setActiveRoom] = useState(null)
   const [parsedRooms, setParsedRooms] = useState(null)
+  const [roomMaterials, setRoomMaterials] = useState({})
   const viewerRef = useRef()
 
   const handleUpload = useCallback(async (e) => {
@@ -43,7 +47,12 @@ export default function App() {
     } finally {
       setLoading(false)
       setParsedRooms(null)
+      setRoomMaterials({})
     }
+  }, [])
+
+  const handleMaterialChange = useCallback((room, color) => {
+    setRoomMaterials(prev => ({ ...prev, [room]: color }))
   }, [])
 
   const toggleMode = useCallback(() => {
@@ -96,6 +105,14 @@ export default function App() {
   }
 
   // ── VIEWER ────────────────────────────────────────────────
+  const enrichedPlanData = planData ? {
+    ...planData,
+    rooms: (parsedRooms || planData.rooms || []).map(r => ({
+      ...r,
+      area_sq_ft: r.computedArea ? Math.round(r.computedArea * 10.764) : (r.area_sq_ft || 100)
+    }))
+  } : null;
+
   return (
     <div className="h-screen w-screen flex flex-col" style={{ background: '#0a0a0f' }}>
       {/* Navbar */}
@@ -127,7 +144,21 @@ export default function App() {
           showRoof={showRoof}
           onRoomEnter={setActiveRoom}
           onRoomsParsed={setParsedRooms}
+          roomMaterials={roomMaterials}
         />
+
+        {planData && (
+          <>
+            <div className="absolute top-4 left-4 z-10 flex flex-col gap-4">
+              <CostEstimatorPanel planData={enrichedPlanData} />
+              <DesignEditorPanel 
+                parsedRooms={parsedRooms} 
+                roomMaterials={roomMaterials} 
+                onMaterialChange={handleMaterialChange} 
+              />
+            </div>
+          </>
+        )}
 
         <div className="absolute top-4 right-4 flex flex-col gap-2 z-10">
           {(parsedRooms || planData?.rooms || []).map((room, idx) => (
@@ -153,11 +184,19 @@ export default function App() {
           </div>
         )}
 
-        <div className="absolute bottom-4 left-4 z-10">
-          <div className="glass-sm px-3 py-2 text-xs text-slate-500">
+        <div className="absolute bottom-4 left-4 z-10 flex flex-col gap-4">
+          <div className="glass-sm px-3 py-2 text-xs text-slate-500 max-w-fit">
             {viewMode === 'walkthrough'
               ? <>WASD to move · Esc to release</>
               : <>🖱 Drag to orbit · Scroll to zoom</>}
+          </div>
+        </div>
+
+        <div className="absolute bottom-4 right-4 z-10 flex flex-col items-end gap-2 pointer-events-none">
+          <div className="pointer-events-auto">
+            <ChatbotPanel planData={enrichedPlanData} onMaterialChange={(room, color) => {
+              setRoomMaterials(prev => ({ ...prev, [room]: color }))
+            }} />
           </div>
         </div>
       </div>
