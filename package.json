@@ -1,0 +1,10 @@
+{
+  "name": "homemaker-ai",
+  "version": "1.0.0",
+  "description": "3D Floor Plan AI Monorepo",
+  "scripts": {
+    "install:all": "npm install --prefix frontend && npm install --prefix mcp-server",
+    "build": "npm run build --prefix frontend && npm run build --prefix mcp-server",
+    "start": "npm start --prefix mcp-server"
+  }
+}

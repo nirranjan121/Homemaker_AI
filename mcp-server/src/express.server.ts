@@ -1,8 +1,13 @@
 import express from 'express';
 import cors from 'cors';
 import multer from 'multer';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import { floorplanTools } from './modules/floorplan/floorplan.tools.js';
 import { ExecutionContext } from '@nitrostack/core';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 export function startExpressServer() {
   const app = express();
@@ -60,6 +65,13 @@ export function startExpressServer() {
       console.error(e);
       res.status(500).json({ error: e.message });
     }
+  });
+
+  const frontendDistPath = path.join(__dirname, '../../frontend/dist');
+  app.use(express.static(frontendDistPath));
+
+  app.get('*', (req, res) => {
+    res.sendFile(path.join(frontendDistPath, 'index.html'));
   });
 
   const port = process.env.EXPRESS_PORT || 8000;
